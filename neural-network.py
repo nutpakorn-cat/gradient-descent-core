@@ -20,6 +20,9 @@ b_list = []
 target_num = 0
 target_list = []
 
+gradient_list_b = []
+gradient_list_w = []
+
 outdate = False
 
 def check_outdate():
@@ -52,6 +55,8 @@ def nn_init(num_of_input, num_of_output):
     global w_list
     global b_list
     global target_list
+    global gradient_list_b
+    global gradient_list_w
     
     input_num = num_of_input
     nn_num = target_num = num_of_output
@@ -76,6 +81,9 @@ def nn_init(num_of_input, num_of_output):
     for i in range(b_num):
         b_list.append(random.randint(-10, 10))
     if(ENABLE_LOG): print(b_list)
+
+    gradient_list_w = [0] * (nn_num*input_num)
+    gradient_list_b = [0] * nn_num
 
 def nn_calculate(nn_index):   
     """Calculate an output node particularly.
@@ -117,6 +125,7 @@ def nn_calculate(nn_index):
 
 def nn_calculate_all():
     global outdate
+    global nn_list
     
     for i in xrange(nn_num):
         nn_list[i] = nn_calculate(i)
@@ -200,6 +209,8 @@ def cost_calculate():
 def cost_calculate_at(index):
     """Calculate cost value particularly."""
     global nn_list
+    global outdate
+
     i = index
     nn_list[i] = nn_calculate(i)
         
@@ -235,7 +246,12 @@ def slope_b_at(i):
     return 2*u * epsilon
 
 def train(time, learning_rate):
+    global gradient_list_w
+    global gradient_list_b
+
     before_train = cost_calculate()
+    gradient_before_w = [0] * (nn_num*input_num)
+    gradient_before_b = [0] * nn_num
 
     print('TRAINING SESSION')
     print('BEFORE TRAIN -> cost: ' + str(before_train) + 'target: ' + str(target_list[0]) + ' , ' + str(target_list[1]) )
@@ -246,6 +262,9 @@ def train(time, learning_rate):
     for t in xrange(time):
         for i in xrange(nn_num):
             for k in xrange(input_num):
+                if(t == False):
+                    gradient_before_w[i+k] = w_list[i+k]
+                    gradient_before_b[i] = b_list[i]
                 w_update(i+k, w_list[i+k] + (-learning_rate * slope_w_at(i+k)))
                 nn_calculate_all()
             b_update(i,b_list[i] + (-learning_rate * slope_b_at(i)))
@@ -270,6 +289,22 @@ def train(time, learning_rate):
 
     print('IMPROVEMENT SCORE: ' 
     + str(before_train - after_train))
+
+    for i in xrange(nn_num):
+        for k in xrange(input_num):
+            gradient_list_w[i+k] += w_list[i+k] - gradient_before_w[i+k]
+
+            print('W m: '
+            + str(i+k) 
+            + ' = '
+            + str(w_list[i+k] 
+            - gradient_before_w[i+k]))
+        gradient_list_b[i] += b_list[i] - gradient_before_b[i]
+
+        print('B i: '
+        + str(i) 
+        + ' = '
+        + str(b_list[i] - gradient_before_w[i]))
     
 # Coding Section
 
@@ -281,11 +316,11 @@ print(input_list)
 
 print(target_list)
 target_update(0, 1)
-target_update(1, 0.1)
+target_update(1, 0.24)
 print(target_list)
 
 print(nn_calculate_all())
-train(10000, 1)
+train(100000, 0.01)
 
 
         
